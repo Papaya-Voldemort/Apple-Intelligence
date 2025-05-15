@@ -1123,13 +1123,14 @@ function setupEventListeners() {
   // Handle form submission
   dom.chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+    // Hide welcome on user send
+    if (dom.welcomeScreen && !dom.welcomeScreen.classList.contains('hidden')) {
+      dom.welcomeScreen.classList.add('hidden');
+    }
     // Don't allow submission while processing
     if (State.isProcessing) return;
-    
     const text = dom.userInput.value.trim();
     if (!text && !dom.imageInput.files[0]) return;
-    
     State.isProcessing = true;
     dom.userInput.value = '';
     dom.userInput.style.height = 'auto';
@@ -1188,60 +1189,17 @@ function setupEventListeners() {
   
   // Handle new conversation button
   dom.btnNew.addEventListener('click', () => {
-    // Create new conversation
     State.createNewConversation();
-    
-    // Update UI
     UI.renderConversationList();
-    UI.renderConversation();
-    
-    // Clear chat messages except welcome screen
-    const chatMessages = document.querySelectorAll('.chat-window .message-container');
-    chatMessages.forEach(msg => {
-      if (!msg.closest('#welcome-screen')) {
-        msg.remove();
-      }
-    });
-    
-    // Show welcome screen with an elegant animation
+    // Show welcome screen
     if (dom.welcomeScreen) {
-      // Reset any previous animations and state
-      dom.welcomeScreen.style.opacity = '0';
-      dom.welcomeScreen.style.transform = 'translateY(-20px) scale(0.98)';
-      dom.welcomeScreen.style.display = 'flex';
       dom.welcomeScreen.classList.remove('hidden');
-      
-      // Reset feature animations
-      const features = dom.welcomeScreen.querySelectorAll('.welcome-feature');
-      features.forEach((feature, index) => {
-        feature.style.opacity = '0';
-        feature.style.transform = 'translateY(20px)';
-      });
-      
-      // Trigger reflow to restart animations
-      void dom.welcomeScreen.offsetWidth;
-      
-      // Fade in with animation
-      setTimeout(() => {
-        dom.welcomeScreen.style.transition = 'opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-        dom.welcomeScreen.style.opacity = '1';
-        dom.welcomeScreen.style.transform = 'translateY(0) scale(1)';
-        
-        // Animate features with staggered delay
-        features.forEach((feature, index) => {
-          setTimeout(() => {
-            feature.style.transition = 'opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-            feature.style.opacity = '1';
-            feature.style.transform = 'translateY(0)';
-          }, 300 + (index * 200));
-        });
-      }, 50);
-      
-      // Focus on input field after animation completes
-      setTimeout(() => {
-        dom.userInput.focus();
-      }, 1000);
+      dom.welcomeScreen.style.display = 'flex';
+      dom.welcomeScreen.style.opacity = '1';
+      dom.welcomeScreen.style.transform = 'none';
     }
+    // Clear existing chat messages
+    if (dom.chatWindow) dom.chatWindow.innerHTML = '';
   });
   
   // Handle theme toggle
@@ -1697,7 +1655,17 @@ function initApp() {
   
   // Render UI
   UI.renderConversationList();
-  UI.renderConversation(false);
+  // Always show welcome screen if there are no messages in the active conversation
+  const activeConv = State.conversations.find(c => c.id === State.activeConversationId);
+  if (!activeConv || !activeConv.messages || activeConv.messages.length === 0) {
+    if (dom.welcomeScreen) {
+      dom.welcomeScreen.classList.remove('hidden');
+      dom.welcomeScreen.style.opacity = '1';
+      dom.welcomeScreen.style.display = 'flex';
+    }
+  } else {
+    UI.renderConversation(false);
+  }
   UI.updateUIState();
   
   // Set up event listeners
