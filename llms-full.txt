@@ -1,0 +1,1834 @@
+---
+url: /guide/authentication.md
+---
+# Authentication
+
+All API requests require authentication using an API key.
+
+## Using Your API Key
+
+Include your API key in the `Authorization` header as a Bearer token:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Managing API Keys
+
+* Create and manage keys from your [dashboard](https://ai.hackclub.com/dashboard) - give each key a descriptive name for easy identification (e.g. `CraftAI`)
+* You can have up to **50 active API keys.**
+* Never share your API keys or commit them to version control. It's your job to look after them!
+* Never use your API keys in client-side code - attackers can steal them and use them to make requests on your behalf.
+
+## Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-32b",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+---
+
+---
+url: /api/chat-completions.md
+description: >-
+  Create chat completions (aka: talk to the AI) for conversations with AI
+  models. Supports streaming and non-streaming modes.
+---
+
+# Chat Completions
+
+Create chat completions for conversations with AI models. Supports streaming and non-streaming modes.
+
+## Endpoint
+
+```
+POST /proxy/v1/chat/completions
+```
+
+## Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `model` | string | Yes | Model ID (e.g., `qwen/qwen3-32b`) |
+| `messages` | array | Yes | Array of message objects |
+| `stream` | boolean | No | Enable streaming (default: `false`) |
+| `temperature` | number | No | Controls randomness, 0-2 (default: `1.0`) |
+| `max_tokens` | number | No | Maximum tokens to generate |
+| `top_p` | number | No | Nucleus sampling (default: `1.0`) |
+
+### Message Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `role` | string | `user`, `assistant`, or `system` |
+| `content` | string | The message content |
+
+## Example Request
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-32b",
+    "messages": [
+      {"role": "user", "content": "Tell me a joke."}
+    ]
+  }'
+```
+
+```javascript [JavaScript]
+import { OpenRouter } from "@openrouter/sdk";
+
+const client = new OpenRouter({
+  apiKey: "YOUR_API_KEY",
+  baseURL: "https://ai.hackclub.com/proxy/v1",
+});
+
+const response = await client.chat.send({
+  model: "qwen/qwen3-32b",
+  messages: [
+    { role: "user", content: "Tell me a joke." },
+  ],
+  stream: false,
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```python [Python]
+from openrouter import OpenRouter
+
+client = OpenRouter(
+    api_key="YOUR_API_KEY",
+    server_url="https://ai.hackclub.com/proxy/v1",
+)
+
+response = client.chat.send(
+    model="qwen/qwen3-32b",
+    messages=[
+        {"role": "user", "content": "Tell me a joke."}
+    ],
+    stream=False,
+)
+
+print(response.choices[0].message.content)
+```
+
+:::
+
+## Example Response
+
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "qwen/qwen3-32b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Why did the scarecrow win an award? Because he was outstanding in his field!"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 15,
+    "total_tokens": 35
+  }
+}
+```
+
+## Streaming
+
+Set `stream: true` to receive responses as server-sent events (SSE). Each chunk contains a delta of the response.
+
+---
+
+---
+url: /api/embeddings.md
+description: >-
+  Generate vector embeddings from text input. Use these embeddings for semantic
+  search, clustering, or storing in vector databases like Pinecone or pgvector.
+---
+
+# Embeddings
+
+Generate vector embeddings from text input. Use these embeddings for semantic search, clustering, or storing in vector databases like Pinecone or pgvector.
+
+## Endpoint
+
+```
+POST /proxy/v1/embeddings
+```
+
+## Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `model` | string | Yes | Embedding model ID (e.g., `qwen/qwen3-embedding-8b`) |
+| `input` | string or array | Yes | Text to embed (single string or array of strings) |
+
+## Example Request
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/embeddings \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-embedding-8b",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+
+```python [Python]
+from openrouter import OpenRouter
+
+client = OpenRouter(
+    api_key="YOUR_API_KEY",
+)
+
+response = client.embeddings.generate(
+    model="qwen/qwen3-embedding-8b",
+    input="The quick brown fox jumps over the lazy dog",
+)
+
+embedding_vector = response.data[0].embedding
+print(len(embedding_vector), "dimensions")
+```
+
+:::
+
+## Example Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023, -0.0134, 0.0421, ...]
+    }
+  ],
+  "model": "qwen/qwen3-embedding-8b",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+
+## Available Models
+
+To list available embedding models:
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/embeddings/models
+```
+
+This endpoint is OpenRouter compatible and requires no authentication.
+
+---
+
+---
+url: /api/get-models.md
+description: List all available models for chat completions and embeddings.
+---
+
+# Get Models
+
+List all available models for chat completions and embeddings.
+
+## Language Models
+
+```
+GET /proxy/v1/models
+```
+
+List all available language models. **No authentication required.**
+
+### Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/models
+```
+
+### Response Format
+
+This endpoint is OpenAI compatible, so the response format matches the OpenAI models endpoint:
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "qwen/qwen3-32b",
+      "object": "model",
+      "created": 1677649963,
+      "owned_by": "qwen"
+    },
+    ...
+  ]
+}
+```
+
+## Embedding Models
+
+```
+GET /proxy/v1/embeddings/models
+```
+
+List all available embedding models. **No authentication required.**
+
+### Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/embeddings/models
+```
+
+### Response Format
+
+This endpoint is OpenRouter compatible, so the response format matches the OpenRouter models endpoint.
+
+---
+
+---
+url: /api/healthcheck.md
+description: Check if Hack Club AI is working and ready to serve requests.
+---
+
+# Healthcheck
+
+Check if Hack Club AI is working and ready to serve requests.
+
+## Endpoint
+
+```
+GET /up
+```
+
+### Example Request
+
+```bash
+curl https://ai.hackclub.com/up
+```
+
+### Response Format
+
+```json
+{
+  "status": "up",
+  "balanceRemaining": 100.444598325,
+  "dailyKeyUsageRemaining": 4.944634734,
+  "timestamp": 1768952604456
+}
+```
+
+| Field Name | Description |
+|------------|-------------|
+| `status` | `up` or `down`. |
+| `balanceRemaining` | How much balance is remaining in HCAI's OpenRouter account. |
+| `dailyKeyUsageRemaining` | How much balance is remaining **for today** in HCAI's OpenRouter account. Subject to change. |
+| `timestamp` | When the uptime result was generated - results may be up to 30 seconds old. |
+
+---
+
+---
+url: /api/image-generation.md
+description: Generate images with AI
+---
+
+# Image Generation
+
+Generate images using AI models via the chat completions endpoint.
+
+## Supported Models
+
+* `google/gemini-2.5-flash-image-preview` (aka Nano Banana) - faster, but lower quality
+* `google/gemini-3-pro-image-preview` (aka Nano Banana 3 Pro) - higher quality output, but also slower
+
+## Request Parameters
+
+In addition to standard chat completion parameters, include:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `modalities` | array | Set to `["image", "text"]` for image generation |
+| `image_config` | object | Optional configuration for image output |
+| `image_config.aspect_ratio` | string | Aspect ratio (see table below) |
+
+### Supported Aspect Ratios
+
+For Gemini image-generation models:
+
+| Aspect Ratio | Dimensions |
+|--------------|------------|
+| `1:1` | 1024×1024 (default) |
+| `2:3` | 832×1248 |
+| `3:2` | 1248×832 |
+| `3:4` | 864×1184 |
+| `4:3` | 1184×864 |
+| `4:5` | 896×1152 |
+| `5:4` | 1152×896 |
+| `9:16` | 768×1344 |
+| `16:9` | 1344×768 |
+| `21:9` | 1536×672 |
+
+## Example Request
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "google/gemini-2.5-flash-image-preview",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Make a picture of a sunset over mountains"
+      }
+    ],
+    "modalities": ["image", "text"],
+    "image_config": {
+      "aspect_ratio": "16:9"
+    },
+    "stream": false
+  }'
+```
+
+```python [Python]
+import base64
+import requests
+
+headers = {
+    "Authorization": f"Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "model": "google/gemini-2.5-flash-image",
+    "messages": [
+        {
+            "role": "user",
+            "content": "Make a picture of a sunset over mountains"
+        }
+    ],
+    "modalities": ["image", "text"],
+    "image_config": {
+        "aspect_ratio": "16:9"
+    }
+}
+
+response = requests.post(
+    "https://ai.hackclub.com/proxy/v1/chat/completions",
+    headers=headers,
+    json=payload
+)
+result = response.json()
+
+if result.get("choices"):
+    message = result["choices"][0]["message"]
+    if message.get("images"):
+        image_url = message["images"][0]["image_url"]["url"]
+        
+        # Handle data URI prefix
+        if "," in image_url:
+            base64_data = image_url.split(",")[1]
+        else:
+            base64_data = image_url
+
+        image_bytes = base64.b64decode(base64_data)
+        # Save or process image_bytes as needed
+```
+
+:::
+
+## Response Format
+
+The response includes an `images` array in the assistant message:
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Here is your image of a sunset over mountains.",
+        "images": [
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "data:image/png;base64,..."
+            }
+          }
+        ]
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}
+```
+
+* **Format**: Images are returned as base64-encoded data URLs
+* **Types**: Typically PNG format (`data:image/png;base64,`)
+* **Multiple Images**: Some models can generate multiple images in a single response
+
+## Streaming
+
+Image generation also works with streaming responses. Set `stream: true` to receive the response as server-sent events.
+
+## More Information
+
+Refer to the [OpenRouter image docs](https://openrouter.ai/docs/guides/overview/multimodal/image-generation) for more details.
+
+---
+
+---
+url: /api/image-inputs.md
+description: Send images to vision-capable models for analysis and understanding.
+---
+
+# Image Inputs
+
+Send images to vision-capable models for analysis and understanding.
+
+## Supported Formats
+
+* **URL**: Send publicly accessible images directly - use this if possible!
+* **Base64**: Required for local files or private images.
+
+## Example: Image via URL
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "google/gemini-2.5-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": "What'\''s in this image?"},
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://example.com/image.jpg"
+            }
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+```javascript [JavaScript]
+const response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer YOUR_API_KEY`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'google/gemini-2.5-flash',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: "What's in this image?",
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: 'https://example.com/image.jpg',
+            },
+          },
+        ],
+      },
+    ],
+  }),
+});
+
+const data = await response.json();
+console.log(data.choices[0].message.content);
+```
+
+```python [Python]
+import requests
+
+response = requests.post(
+    "https://ai.hackclub.com/proxy/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "google/gemini-2.5-flash",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/image.jpg"
+                    }
+                }
+            ]
+        }]
+    }
+)
+
+result = response.json()
+print(result["choices"][0]["message"]["content"])
+```
+
+:::
+
+## Example: Base64-encoded Image
+
+::: code-group
+
+```javascript [JavaScript]
+// Convert image to base64
+const imageBuffer = await fetch('https://example.com/image.jpg').then(r => r.arrayBuffer());
+const base64Image = Buffer.from(imageBuffer).toString('base64');
+
+const response = await fetch('https://ai.hackclub.com/proxy/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer YOUR_API_KEY`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'google/gemini-2.5-flash',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: "What's in this image?",
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${base64Image}`,
+            },
+          },
+        ],
+      },
+    ],
+  }),
+});
+
+const data = await response.json();
+console.log(data.choices[0].message.content);
+```
+
+```python [Python]
+import base64
+import requests
+
+def encode_image(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+image_data = encode_image("path/to/image.jpg")
+
+response = requests.post(
+    "https://ai.hackclub.com/proxy/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "google/gemini-2.5-flash",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_data}"
+                    }
+                }
+            ]
+        }]
+    }
+)
+
+result = response.json()
+print(result["choices"][0]["message"]["content"])
+```
+
+:::
+
+## Response Format
+
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "model": "google/gemini-2.5-flash",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "This image shows a sunset over mountains with vibrant orange and purple colors..."
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}
+```
+
+---
+
+---
+url: /models-list.md
+---
+# Models List
+
+Browse all available models on Hack Club AI. Data is fetched live from the API.
+
+---
+
+---
+url: /api/moderations.md
+description: >-
+  Classify if text or images are potentially inappropriate (e.g., hate speech,
+  violence, NSFW content).
+---
+
+# Moderations
+
+Classify if text or images are potentially inappropriate (e.g., hate speech, violence, NSFW content).
+
+## Endpoint
+
+```
+POST /proxy/v1/moderations
+```
+
+## Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `input` | string | Yes | Text to classify |
+
+## Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/moderations \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "I want to kill them."
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": "modr-5558",
+  "model": "omni-moderation-latest",
+  "results": [
+    {
+      "flagged": true,
+      "categories": {
+        "harassment": false,
+        "harassment/threatening": false,
+        "sexual": false,
+        "hate": false,
+        "hate/threatening": false,
+        "illicit": false,
+        "illicit/violent": false,
+        "self-harm/intent": false,
+        "self-harm/instructions": false,
+        "self-harm": false,
+        "sexual/minors": false,
+        "violence": true,
+        "violence/graphic": false
+      },
+      "category_scores": {
+        "harassment": 0.009,
+        "harassment/threatening": 0.001,
+        "sexual": 0.0002,
+        "hate": 0.001,
+        "hate/threatening": 0.00002,
+        "illicit": 0.004,
+        "illicit/violent": 0.00003,
+        "self-harm/intent": 0.0002,
+        "self-harm/instructions": 0.000003,
+        "self-harm": 0.00001,
+        "sexual/minors": 0.0002,
+        "violence": 0.93,
+        "violence/graphic": 0.000004
+      },
+      "category_applied_input_types": {
+        "harassment": ["text"],
+        "harassment/threatening": ["text"],
+        "sexual": ["text"],
+        "hate": ["text"],
+        "hate/threatening": ["text"],
+        "illicit": ["text"],
+        "illicit/violent": ["text"],
+        "self-harm/intent": ["text"],
+        "self-harm/instructions": ["text"],
+        "self-harm": ["text"],
+        "sexual/minors": ["text"],
+        "violence": ["text"],
+        "violence/graphic": ["text"]
+      }
+    }
+  ]
+}
+```
+
+## Categories
+
+| Category | Description |
+|----------|-------------|
+| `harassment` | Harassing language |
+| `harassment/threatening` | Threatening harassment |
+| `sexual` | Sexual content |
+| `hate` | Hate speech |
+| `hate/threatening` | Threatening hate speech |
+| `illicit` | Illegal activity |
+| `illicit/violent` | Violent illegal activity |
+| `self-harm` | Self-harm content |
+| `self-harm/intent` | Intent to self-harm |
+| `self-harm/instructions` | Instructions for self-harm |
+| `sexual/minors` | Sexual content involving minors |
+| `violence` | Violent content |
+| `violence/graphic` | Graphic violence |
+
+---
+
+---
+url: /api/ocr.md
+description: Extract text and structured content from images and PDF documents using OCR.
+---
+
+# OCR (Optical Character Recognition)
+
+Extract text and structured content from images and PDF documents. Powered by Mistral OCR, this endpoint can understand complex document elements including tables, mathematical expressions, and multi-column layouts.
+
+## Endpoint
+
+```
+POST /proxy/v1/ocr
+```
+
+## Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `document` | object | Yes | The document to process (see Document Types below) |
+| `model` | string | No | Model to use. Default: `mistral-ocr-latest` |
+| `id` | string | No | Optional request identifier |
+| `pages` | array\<integer> | No | Specific pages to process (0-indexed). Example: `[0, 1, 2]` |
+| `include_image_base64` | boolean | No | Include extracted images as base64 in response |
+| `image_limit` | integer | No | Maximum number of images to extract |
+| `image_min_size` | integer | No | Minimum height/width of images to extract |
+| `table_format` | string | No | Table output format: `"markdown"` or `"html"` |
+| `extract_header` | boolean | No | Extract document headers separately. Default: `false` |
+| `extract_footer` | boolean | No | Extract document footers separately. Default: `false` |
+| `document_annotation_format` | object | No | Response format for document annotation (see Response Formats) |
+| `bbox_annotation_format` | object | No | Response format for bounding box annotation (see Response Formats) |
+
+## Document Types
+
+### Image URL
+
+```json
+{
+  "document": {
+    "type": "image_url",
+    "image_url": "https://example.com/image.png"
+  }
+}
+```
+
+### Document URL (PDF)
+
+```json
+{
+  "document": {
+    "type": "document_url",
+    "document_url": "https://example.com/document.pdf"
+  }
+}
+```
+
+### File ID (previously uploaded)
+
+```json
+{
+  "document": {
+    "type": "file",
+    "file_id": "your_file_id_here"
+  }
+}
+```
+
+::: tip
+To process local files, first upload them to a publicly accessible URL (e.g., cloud storage) and use `document_url` or `image_url`.
+:::
+
+## Response Formats
+
+Use these for `document_annotation_format` or `bbox_annotation_format`:
+
+### Text (default)
+
+```json
+{ "type": "text" }
+```
+
+### JSON Object
+
+```json
+{ "type": "json_object" }
+```
+
+### JSON Schema
+
+```json
+{
+  "type": "json_schema",
+  "json_schema": { "your": "schema" }
+}
+```
+
+## Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/ocr \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document": {
+      "type": "image_url",
+      "image_url": "https://example.com/receipt.png"
+    },
+    "table_format": "markdown"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "model": "mistral-ocr-latest",
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Invoice\n\nDate: 2024-01-15\n\n| Item | Quantity | Price |\n|------|----------|-------|\n| Widget | 5 | $10.00 |\n| Gadget | 2 | $25.00 |\n\n**Total: $100.00**",
+      "images": [],
+      "dimensions": {
+        "width": 800,
+        "height": 1200
+      }
+    }
+  ],
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 1,
+    "doc_size_bytes": 102400
+  }
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model` | string | The model used for OCR |
+| `pages` | array | List of OCR results per page |
+| `pages[].index` | integer | Page index (0-based) |
+| `pages[].markdown` | string | Extracted content in Markdown format |
+| `pages[].images` | array | Extracted images with bounding boxes |
+| `pages[].dimensions` | object | Page dimensions (width, height) |
+| `document_annotation` | string|null | Formatted response if annotation format was specified |
+| `usage_info` | object | Usage information for the request |
+
+## Features
+
+* **Text Extraction**: Preserves document structure including headers, paragraphs, and lists
+* **Table Recognition**: Outputs tables in Markdown or HTML format
+* **Math Support**: Handles mathematical expressions and LaTeX formatting
+* **Multi-language**: Supports thousands of scripts and languages
+* **Image Extraction**: Optionally extract embedded images with bounding boxes
+* **Structured Output**: Use JSON schema for structured data extraction
+
+## Supported Formats
+
+### Images
+
+* PNG, JPEG/JPG, AVIF, WebP, and more
+
+### Documents
+
+* PDF, PPTX, DOCX, and more
+
+## Limitations
+
+* Maximum file size: 50 MB
+* Maximum pages: 1000 per request
+* Character formatting (bold, italic, underline) is not preserved
+* Footnotes and superscript text are preserved
+
+---
+
+---
+url: /api/pdf-inputs.md
+description: Send PDF documents to any model for analysis and summarization.
+---
+
+# PDF Inputs
+
+Send PDF documents to any model for analysis and summarization.
+
+## Supported Formats
+
+* **URL**: Send publicly accessible PDFs directly without encoding (hint: [Bucky](https://bucky.hackclub.com) may be useful)
+* **Base64**: Required for local files or private documents
+
+When a model supports file input natively, the PDF is passed directly to the model. Otherwise, the PDF will get parsed and the parsed results will be passed to the model.
+
+## PDF Processing Engines
+
+Configure PDF processing using the `plugins` parameter:
+
+| Engine | Description |
+|--------|-------------|
+| `pdf-text` | Best for well-structured PDFs |
+| `mistral-ocr` | Best for scanned documents or PDFs with images |
+| `native` | Uses model's built-in file processing **(highly recommended)** |
+
+If you don't specify an engine, Hack Club AI defaults to the model's native capability first (which usually will be the best option), then falls back to `mistral-ocr`.
+
+## Example: PDF via URL
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-32b",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": "What are the main points in this document?"},
+          {
+            "type": "file",
+            "file": {
+              "filename": "bitcoin.pdf",
+              "file_data": "https://bitcoin.org/bitcoin.pdf"
+            }
+          }
+        ]
+      }
+    ],
+    "plugins": [
+      {
+        "id": "file-parser",
+        "pdf": {"engine": "pdf-text"}
+      }
+    ]
+  }'
+```
+
+## Example: Base64-encoded PDF
+
+```python
+import base64
+import requests
+
+def encode_pdf(path):
+    with open(path, "rb") as f:
+        return f"data:application/pdf;base64,{base64.b64encode(f.read()).decode()}"
+
+response = requests.post(
+    "https://ai.hackclub.com/proxy/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "qwen/qwen3-32b",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Summarize this document"},
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "document.pdf",
+                        "file_data": encode_pdf("path/to/document.pdf")
+                    }
+                }
+            ]
+        }],
+        "plugins": [{"id": "file-parser", "pdf": {"engine": "mistral-ocr"}}]
+    }
+)
+```
+
+## Reusing File Annotations
+
+When you send a PDF, the response may include annotations in the assistant message. Include these in subsequent requests to skip re-parsing and save costs:
+
+```python
+response = requests.post(url, headers=headers, json={...})
+result = response.json()
+
+annotations = result["choices"][0]["message"].get("annotations")
+
+follow_up = requests.post(url, headers=headers, json={
+    "model": "qwen/qwen3-32b",
+    "messages": [
+        {"role": "user", "content": [...]},  # Original message with PDF
+        {
+            "role": "assistant",
+            "content": result["choices"][0]["message"]["content"],
+            "annotations": annotations  # Include these to skip re-parsing!
+        },
+        {"role": "user", "content": "Can you elaborate on point 2?"}
+    ]
+})
+```
+
+---
+
+---
+url: /api/responses.md
+description: >-
+  Create responses using the Responses API. Supports simple text input,
+  structured messages, and streaming.
+---
+
+# Responses API
+
+Create responses for conversations with AI models. Supports both simple string input and structured message arrays.
+
+## Endpoint
+
+```
+POST /proxy/v1/responses
+```
+
+## Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `model` | string | Yes | Model ID (e.g., `qwen/qwen3-32b`) |
+| `input` | string or array | Yes | Text prompt or message array |
+| `stream` | boolean | No | Enable streaming (default: `false`) |
+| `max_output_tokens` | integer | No | Maximum tokens to generate |
+| `temperature` | number | No | Sampling temperature, 0-2 |
+| `top_p` | number | No | Nucleus sampling parameter, 0-1 |
+
+### Message Object (Structured Input)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | Must be `message` |
+| `role` | string | `user` or `assistant` |
+| `content` | array | Array of content objects |
+
+### Content Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | `input_text` for user, `output_text` for assistant |
+| `text` | string | The message content |
+
+## Simple String Input
+
+The simplest way to use the API:
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/responses \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-32b",
+    "input": "What is the meaning of life?",
+    "max_output_tokens": 9000
+  }'
+```
+
+```javascript [JavaScript]
+const response = await fetch('https://ai.hackclub.com/proxy/v1/responses', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'qwen/qwen3-32b',
+    input: 'What is the meaning of life?',
+    max_output_tokens: 9000,
+  }),
+});
+
+const result = await response.json();
+console.log(result);
+```
+
+```python [Python]
+import requests
+
+response = requests.post(
+    'https://ai.hackclub.com/proxy/v1/responses',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'model': 'qwen/qwen3-32b',
+        'input': 'What is the meaning of life?',
+        'max_output_tokens': 9000,
+    }
+)
+
+result = response.json()
+print(result)
+```
+
+:::
+
+## Structured Message Input
+
+For more complex conversations, use the message array format:
+
+::: code-group
+
+```bash [cURL]
+curl https://ai.hackclub.com/proxy/v1/responses \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-32b",
+    "input": [
+      {
+        "type": "message",
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Tell me a joke about programming"
+          }
+        ]
+      }
+    ],
+    "max_output_tokens": 9000
+  }'
+```
+
+```javascript [JavaScript]
+const response = await fetch('https://ai.hackclub.com/proxy/v1/responses', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'qwen/qwen3-32b',
+    input: [
+      {
+        type: 'message',
+        role: 'user',
+        content: [
+          {
+            type: 'input_text',
+            text: 'Tell me a joke about programming',
+          },
+        ],
+      },
+    ],
+    max_output_tokens: 9000,
+  }),
+});
+
+const result = await response.json();
+```
+
+```python [Python]
+import requests
+
+response = requests.post(
+    'https://ai.hackclub.com/proxy/v1/responses',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'model': 'qwen/qwen3-32b',
+        'input': [
+            {
+                'type': 'message',
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'input_text',
+                        'text': 'Tell me a joke about programming',
+                    },
+                ],
+            },
+        ],
+        'max_output_tokens': 9000,
+    }
+)
+
+result = response.json()
+```
+
+:::
+
+## Example Response
+
+```json
+{
+  "id": "resp_1234567890",
+  "object": "response",
+  "created_at": 1234567890,
+  "model": "qwen/qwen3-32b",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_abc123",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "The meaning of life is a philosophical question...",
+          "annotations": []
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 45,
+    "total_tokens": 57
+  },
+  "status": "completed"
+}
+```
+
+## Streaming
+
+Set `stream: true` to receive responses as server-sent events (SSE):
+
+::: code-group
+
+```javascript [JavaScript]
+const response = await fetch('https://ai.hackclub.com/proxy/v1/responses', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'qwen/qwen3-32b',
+    input: 'Write a short story about AI',
+    stream: true,
+    max_output_tokens: 9000,
+  }),
+});
+
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const chunk = decoder.decode(value);
+  const lines = chunk.split('\n');
+
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      const data = line.slice(6);
+      if (data === '[DONE]') return;
+
+      try {
+        const parsed = JSON.parse(data);
+        console.log(parsed);
+      } catch (e) {
+        // Skip invalid JSON
+      }
+    }
+  }
+}
+```
+
+```python [Python]
+import requests
+import json
+
+response = requests.post(
+    'https://ai.hackclub.com/proxy/v1/responses',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'model': 'qwen/qwen3-32b',
+        'input': 'Write a short story about AI',
+        'stream': True,
+        'max_output_tokens': 9000,
+    },
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line:
+        line_str = line.decode('utf-8')
+        if line_str.startswith('data: '):
+            data = line_str[6:]
+            if data == '[DONE]':
+                break
+            try:
+                parsed = json.loads(data)
+                print(parsed)
+            except json.JSONDecodeError:
+                continue
+```
+
+:::
+
+## Multi-Turn Conversations
+
+The Responses API is stateless—include the full conversation history in each request:
+
+```javascript
+const response = await fetch('https://ai.hackclub.com/proxy/v1/responses', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'qwen/qwen3-32b',
+    input: [
+      {
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text: 'What is the capital of France?' }],
+      },
+      {
+        type: 'message',
+        role: 'assistant',
+        id: 'msg_abc123',
+        status: 'completed',
+        content: [{ type: 'output_text', text: 'The capital of France is Paris.', annotations: [] }],
+      },
+      {
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text: 'What is the population of that city?' }],
+      },
+    ],
+    max_output_tokens: 9000,
+  }),
+});
+```
+
+::: info
+The `id` and `status` fields are required for any `assistant` role messages in conversation history.
+:::
+
+---
+
+---
+url: /guide/rules.md
+---
+# Rules & Rate Limiting
+
+## Rules
+
+1. **For teens.** This service is for teens 18 and under only. Hack Club is a charity — please do not abuse this service.
+
+2. **No coding agents.** You are not allowed to use this service with coding agents like Cursor.
+
+3. **No proxies.** You are not allowed to use this service to create proxies or other tools that allow others to access the API without them also abiding by these rules.
+
+4. **No resale.** You are not allowed to resell this service or use it to create a service that resells AI to others.
+
+5. **Follow the Code of Conduct.** You are not allowed to use this service to create tools that intentionally violate the [Code of Conduct](https://hackclub.com/conduct). Don't try to generate explicit imagery or text, malware, or other harmful content.
+
+## Rate Limiting
+
+Rate limits are applied per user:
+
+| Endpoint | Limit |
+|----------|-------|
+| Chat completions & Embeddings | 450 requests per 30 minutes |
+| Moderations | 300 requests per 30 minutes |
+
+When you exceed a rate limit, the API will return a `429 Too Many Requests` response. Wait for the rate limit window to reset before making additional requests.
+
+---
+
+---
+url: /api/stats.md
+description: Get token usage statistics for your account.
+---
+
+# Token Stats
+
+Get token usage statistics for your account.
+
+## Endpoint
+
+```
+GET /proxy/v1/stats
+```
+
+## Example Request
+
+```bash
+curl https://ai.hackclub.com/proxy/v1/stats \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Example Response
+
+```json
+{
+  "totalRequests": 123456,
+  "totalTokens": 7890,
+  "totalPromptTokens": 1234,
+  "totalCompletionTokens": 5678
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalRequests` | number | Total number of API requests made |
+| `totalTokens` | number | Total tokens used (prompt + completion) |
+| `totalPromptTokens` | number | Total tokens used in prompts |
+| `totalCompletionTokens` | number | Total tokens generated in responses |
+
+---
+
+---
+url: /guide/replicate.md
+description: Learn how to use Replicate models with the Hack Club AI API.
+---
+
+# Using Replicate Models
+
+The Hack Club AI API allows you to easily integrate and use models hosted on [Replicate](https://replicate.com/). This guide will walk you through the steps to get started with Replicate models using the Hack Club AI API.
+
+> \[!NOTE]
+> Replicate support is currently in **closed beta**. If you're interested in using Replicate models, reach out at <hey@mahadk.com>
+
+## Finding Replicate Models
+
+Take a look at [HCAI's model directory](https://ai.hackclub.com/replicate) to find models that suit your needs. Each model page contains important information such as input parameters, output format, and example usage.
+
+## Making Requests
+
+To use a Replicate model, you'll need to make a request to the Hack Club AI API's Replicate endpoint. Below are examples of how to do this.
+
+::: code-group
+
+```ts [JavaScript]
+import Replicate from "replicate";
+// Make sure REPLICATE_API_TOKEN is set to your Hack Club AI API key
+const replicate = new Replicate({ baseUrl: "https://ai.hackclub.com/proxy/v1/replicate" });
+
+const input = {
+    voice: "William (Whispering)",
+    prompt: "Poppin' bottles in the ice, like a blizzard.\nWhen we drink, we do it right, gettin' slizzered\nSippin' sizzurp in my ride (in my ride) like Three 6.\nNow I'm feelin' so fly like a G 6"
+};
+
+const output = await replicate.run("resemble-ai/chatterbox-pro", { input });
+
+// To access the file URL:
+console.log(output.url());
+```
+
+```bash [cURL]
+curl --silent --show-error https://ai.hackclub.com/proxy/v1/replicate/models/minimax/speech-02-turbo/predictions \
+ --request POST \
+ --header "Authorization: Bearer $HACK_CLUB_AI_KEY" \
+ --header "Content-Type: application/json" \
+ --header "Prefer: wait" \
+ --data @- <<'EOM'
+{
+ "input": {
+      "text": "Speech-02-series is a Text-to-Audio and voice cloning technology that offers voice synthesis, emotional expression, and multilingual capabilities.\n\nThe HD version is optimized for high-fidelity applications like voiceovers and audiobooks. While the turbo one is designed for real-time applications with low latency.\n\nWhen using this model on Replicate, each character represents 1 token.",
+      "emotion": "angry",
+      "voice_id": "Deep_Voice_Man",
+      "language_boost": "English",
+      "english_normalization": true
+ }
+}
+EOM
+```
+
+:::
+
+---
+
+---
+url: /guide/using-with-vercel-ai-sdk.md
+description: Use Hack Club AI with Vercel AI SDK.
+---
+
+# Using with Vercel AI SDK
+
+This guide will show you how to use Hack Club AI with the Vercel AI SDK.
+
+## Installation
+
+To use Hack Club AI with the Vercel AI SDK, you will need to install the SDK and configure it with your API key. Hack Club AI is OpenRouter compatible, so we'll use the OpenRouter provider and change the base URL.
+
+```sh
+npm install @openrouter/ai-sdk-provider ai // [!=npm auto]
+```
+
+## Usage
+
+First, create a provider instance:
+
+```ts
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { generateText } from 'ai';
+
+const hackclub = createOpenRouter({
+  apiKey: process.env.HACK_CLUB_AI_API_KEY,
+  baseUrl: 'https://ai.hackclub.com/proxy/v1',
+});
+```
+
+Then, use it like any other AI SDK provider:
+
+```ts
+const { text } = await generateText({
+    model: hackclub('qwen/qwen3-32b'),
+    system: 'You are a helpful assistant.',
+    prompt: "What is the capital of Peru?",
+});
+
+console.log(text);
+```
+
+## Next Steps
+
+To learn more about the Vercel AI SDK, see the [Vercel AI SDK documentation](https://ai-sdk.dev/docs/ai-sdk-core/overview).
+
+---
+
+---
+url: /guide/web-search.md
+description: Add real-time web search to your AI applications.
+---
+
+# Web Search for AI
+
+Ground your AI responses with real-time web data using the [Hack Club Search API](https://search.hackclub.com). This guide shows how to combine Hack Club AI with web search for more accurate, up-to-date responses.
+
+## Why Add Web Search?
+
+LLMs have knowledge cutoffs and can hallucinate facts. By incorporating live search results into your prompts, you can:
+
+* Provide current information (news, prices, events).
+* Ground responses in verifiable sources and increase trustworthiness.
+* Reduce hallucinations with real data.
+
+## Getting Started
+
+You'll need two API keys:
+
+1. **Hack Club AI** - for LLM inference ([get one here](/guide/authentication))
+2. **Hack Club Search** - for web search ([get one from the dashboard](https://search.hackclub.com))
+
+## Basic Pattern
+
+The pattern is simple: search first, then include results in your prompt.
+
+```ts
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { generateText } from 'ai';
+
+const hackclub = createOpenRouter({
+  apiKey: process.env.HACK_CLUB_AI_API_KEY,
+  baseUrl: 'https://ai.hackclub.com/proxy/v1',
+});
+
+async function searchWeb(query: string) {
+  const res = await fetch(
+    `https://search.hackclub.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.HACK_CLUB_SEARCH_API_KEY}`,
+      },
+    }
+  );
+  return res.json();
+}
+
+async function askWithSearch(question: string) {
+  // 1. Search the web
+  const searchResults = await searchWeb(question);
+  
+  // 2. Format results for the prompt
+  const context = searchResults.web?.results
+    ?.map((r: any) => `[${r.title}](${r.url})\n${r.description}`)
+    .join('\n\n');
+
+  // 3. Ask the AI with search context
+  const { text } = await generateText({
+    model: hackclub('qwen/qwen3-32b'),
+    system: `You are a helpful assistant. Use the following web search results to answer questions accurately. Cite sources using markdown links.
+
+Web search results:
+${context}`,
+    prompt: question,
+  });
+
+  return text;
+}
+
+// Example usage
+const answer = await askWithSearch("What's happening at Hack Club right now?");
+console.log(answer);
+```
+
+## Search Types
+
+The Search API supports multiple search types for different use cases:
+
+### Web Search
+
+General web search for pages, articles, and documentation.
+
+```ts
+const res = await fetch(
+  `https://search.hackclub.com/res/v1/web/search?q=${query}&count=10`,
+  { headers: { Authorization: `Bearer ${apiKey}` } }
+);
+```
+
+### News Search
+
+Get recent news articles with the `freshness` parameter.
+
+```ts
+const res = await fetch(
+  `https://search.hackclub.com/res/v1/news/search?q=${query}&freshness=pd`, // pd = past day
+  { headers: { Authorization: `Bearer ${apiKey}` } }
+);
+```
+
+### Image Search
+
+Search for images to include in multimodal prompts.
+
+```ts
+const res = await fetch(
+  `https://search.hackclub.com/res/v1/images/search?q=${query}&count=5`,
+  { headers: { Authorization: `Bearer ${apiKey}` } }
+);
+```
+
+## Python Example
+
+```python
+import requests
+import os
+
+def search_web(query: str) -> dict:
+    response = requests.get(
+        'https://search.hackclub.com/res/v1/web/search',
+        params={'q': query, 'count': 5},
+        headers={'Authorization': f'Bearer {os.environ["HACK_CLUB_SEARCH_API_KEY"]}'}
+    )
+    return response.json()
+
+def ask_with_search(question: str) -> str:
+    # Search the web
+    results = search_web(question)
+    
+    # Format context
+    context = "\n\n".join([
+        f"[{r['title']}]({r['url']})\n{r['description']}"
+        for r in results.get('web', {}).get('results', [])
+    ])
+    
+    # Call Hack Club AI
+    response = requests.post(
+        'https://ai.hackclub.com/chat/completions',
+        headers={'Authorization': f'Bearer {os.environ["HACK_CLUB_AI_API_KEY"]}'},
+        json={
+            'model': 'qwen/qwen3-32b',
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': f'Use these web results to answer accurately. Cite sources.\n\n{context}'
+                },
+                {'role': 'user', 'content': question}
+            ]
+        }
+    )
+    
+    return response.json()['choices'][0]['message']['content']
+```
+
+## Tips
+
+* **Be specific with queries** - More specific search queries yield better results.
+* **Limit results** - 3-5 results is usually enough context without overwhelming the model. If you request too many, it can pollute the context and make it harder for the model to understand the question.
+* **Use freshness** - For time-sensitive topics, use `freshness=pd` (past day) or `freshness=pw` (past week).
+* **Cite sources** - Instruct the model to cite sources so users can verify information.
+* **Handle errors** - The search API has rate limits (400 requests per 30 minutes), so handle 429 errors gracefully.
+
+## Rate Limits
+
+The Hack Club Search API allows:
+
+* 400 requests per 30 minutes per user
+* Maximum query length: 400 characters
+
+## Next Steps
+
+* [Hack Club Search API Documentation](https://search.hackclub.com/docs) - Full API reference
+* [Brave Search API Docs](https://api.search.brave.com/app/documentation) - Detailed response schemas
