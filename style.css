@@ -2204,3 +2204,41 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .apple-device .chat-window {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Password-type API key input */
+.setting-item input[type="password"] {
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--surface-light);
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.dark-theme .setting-item input[type="password"] {
+  background: var(--surface-lighter);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.setting-item input[type="password"]:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.15);
+}
+
+.setting-item input[type="text"]:focus,
+.setting-item input[type="number"]:focus,
+.setting-item select:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.15);
+}
+
+.setting-hint {
+  font-size: 0.78em;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  margin-left: 4px;
+}
